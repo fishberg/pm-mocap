@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def rot_mat(roll, pitch, yaw):
+    roll = -roll
+    pitch = -pitch
+    yaw = -yaw
     D = np.array([[   np.cos(yaw),    np.sin(yaw),              0],
                   [  -np.sin(yaw),    np.cos(yaw),              0],
                   [             0,              0,              1]])
@@ -38,19 +41,17 @@ class Camera:
         self.hfov = hfov
 
     def mk_fov(self):
-        rot_center = rot_mat(self.roll, self.pitch, self.yaw)
-        rot_wsub = rot_mat(self.roll, self.pitch, self.yaw - self.wfov/2)
-        rot_wadd = rot_mat(self.roll, self.pitch, self.yaw + self.wfov/2)
-        rot_hsub = rot_mat(self.roll, self.pitch - self.hfov/2, self.yaw)
-        rot_hadd = rot_mat(self.roll, self.pitch + self.hfov/2, self.yaw)
+        rot = rot_mat(self.roll, self.pitch, self.yaw)
 
-        line_step = np.linspace([0,0,0],[10,0,0],100).T
+        line_step = np.linspace([0,0,0],[5,0,0],100).T
+        print(line_step.shape)
+        line_center = np.matmul(rot, line_step)
+        line_wmin = np.matmul(rot, np.matmul(rot_mat(0,0,-self.wfov/2), line_step))
+        line_wmax = np.matmul(rot, np.matmul(rot_mat(0,0, self.wfov/2), line_step))
+        line_hmin = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,0), line_step))
+        line_hmax = np.matmul(rot, np.matmul(rot_mat(0, self.wfov/2,0), line_step))
 
-        line_center = np.matmul(rot_center, line_step)
-        line_wsub = np.matmul(rot_wsub, line_step)
-        line_wadd = np.matmul(rot_wadd, line_step)
-        line_hsub = np.matmul(rot_hsub, line_step)
-        line_hadd = np.matmul(rot_hadd, line_step)
+        print(self.wfov, self.hfov)
 
         loc = np.array([self.x, self.y, self.z])
 
@@ -71,11 +72,11 @@ class Camera:
         assert all(line_wsub[2,:] == line_wadd[2,:])
         """
 
-        return line_center, line_wsub, line_wadd, line_hsub, line_hadd
+        return line_center, line_wmin, line_wmax, line_hmin, line_hmax
     
     def plot(self, ax):
         i = 0
-        colors = ['g','b','b','r','r']
+        colors = ['green','purple','blue','orange','red']
         for line in self.mk_fov():
             xx,yy,zz = line
             ax.plot(xx,yy,zz,c=colors[i])
@@ -92,34 +93,26 @@ xs = [0]
 ys = [0]
 zs = [0]
 
-line_step = np.linspace(0,10,100)
-line_x = line_step
-line_y = np.array([0]*100)
-line_z = np.array([0]*100)
-line_xyz = np.array([line_x,line_y,line_z])
-
-print(rot_mat(0,np.pi/2,0).shape)
-print(line_xyz.shape)
-
-line_rot = np.matmul(rot_mat(0,np.pi/2,0),line_xyz)
-
 ax.scatter(xs,ys,zs, c='r', marker='o')
 
 #cam1 = Webcam(-2,-2,0,0,deg2rad(30),deg2rad(-45))
-cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(90),deg2rad(45))
+cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(0),deg2rad(0))
 #cam2 = Webcam(2,-2,0,0,deg2rad(30),deg2rad(-135))
 #cam3 = Webcam(2,2,0,0,deg2rad(30),deg2rad(135))
 cam1.plot(ax)
 #cam2.plot(ax)
 #cam3.plot(ax)
 
+grounded = np.linspace([0,0,0],[5,0,0],50).T
+xx,yy,zz = grounded
+ax.plot(xx,yy,zz,c='black')
 
 ax.set_xlabel('X Label')
 ax.set_ylabel('Y Label')
 ax.set_zlabel('Z Label')
 
 ax.set_xlim([-2,2])
-ax.set_ylim([-2,2])
-ax.set_zlim([-2,2])
+ax.set_ylim([2,-2])
+ax.set_zlim([2,-2])
 
 plt.show()
