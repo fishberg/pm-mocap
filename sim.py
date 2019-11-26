@@ -59,17 +59,21 @@ class Camera:
     def mk_fov(self):
         rot = rot_mat(self.roll, self.pitch, self.yaw)
 
-        line_step = np.linspace([0,0,0],[5,0,0],100).T
+        line_step = np.linspace([0,0,0],[5,0,0],101).T
         print(line_step.shape)
         line_center = np.matmul(rot, line_step)
-        line_wmin = np.matmul(rot, np.matmul(rot_mat(0,0,-self.wfov/2), line_step))
-        line_wmax = np.matmul(rot, np.matmul(rot_mat(0,0, self.wfov/2), line_step))
-        line_hmin = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,0), line_step))
-        line_hmax = np.matmul(rot, np.matmul(rot_mat(0, self.wfov/2,0), line_step))
-
-        print(self.wfov, self.hfov)
+        line_tl = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step))
+        line_tr = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step))
+        line_bl = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step))
+        line_br = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, self.wfov/2), line_step))
 
         loc = np.array([self.x, self.y, self.z])
+
+        rec = np.array([line_tl[:,20], line_tr[:,20], line_br[:,20], line_bl[:,20], line_tl[:,20]]).T
+        print(rec)
+        print(rec.shape)
+        print(line_tl)
+        print(line_tl.shape)
 
         """
         line_center = (line_center.T + loc).T
@@ -88,11 +92,11 @@ class Camera:
         assert all(line_wsub[2,:] == line_wadd[2,:])
         """
 
-        return line_center, line_wmin, line_wmax, line_hmin, line_hmax
+        return line_center, line_tl, line_tr, line_bl, line_br, rec
     
     def plot(self, ax):
         i = 0
-        colors = ['green','purple','blue','orange','red']
+        colors = ['green','red','orange','blue','purple','black']
         for line in self.mk_fov():
             xx,yy,zz = line
             ax.plot(xx,yy,zz,c=colors[i])
@@ -146,7 +150,7 @@ def mk_plot():
 curr = 0
 for curr in range(0,361,45):
     fig,ax = mk_plot()
-    cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(45),deg2rad(curr))
+    cam1 = Webcam(0,0,0,deg2rad(0),deg2rad(0),deg2rad(curr))
     cam1.plot(ax)
     ax.set_title(str(curr))
 
