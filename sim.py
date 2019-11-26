@@ -4,6 +4,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 
+import time
+
 def rot_mat(roll, pitch, yaw):
     roll = -roll
     pitch = -pitch
@@ -19,8 +21,22 @@ def rot_mat(roll, pitch, yaw):
     B = np.array([[             1,              0,              0],
                   [             0,   np.cos(roll),   np.sin(roll)],
                   [             0,  -np.sin(roll),   np.cos(roll)]])
+    """
+    D = np.array([[ np.cos(pitch),  np.sin(pitch),              0],
+                  [-np.sin(pitch),  np.cos(pitch),              0],
+                  [             0,              0,              1]])
 
-    A = np.matmul(np.matmul(B,C),D)
+    C = np.array([[             1,              0,              0],
+                  [             0,   np.cos(roll),   np.sin(roll)],
+                  [             0,  -np.sin(roll),   np.cos(roll)]])
+
+    B = np.array([[   np.cos(yaw),    np.sin(yaw),              0],
+                  [  -np.sin(yaw),    np.cos(yaw),              0],
+                  [             0,              0,              1]])
+    """
+
+    #A = np.matmul(np.matmul(B,C),D)
+    A = np.matmul(np.matmul(D,C),B)
     return A
 
 def deg2rad(deg):
@@ -81,38 +97,57 @@ class Camera:
             xx,yy,zz = line
             ax.plot(xx,yy,zz,c=colors[i])
             i+=1
+            #break
 
 class Webcam(Camera):
     def __init__(self,x,y,z,roll,pitch,yaw):
         super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(60*9/16))
 
+jj = 1
 fig = plt.figure()
-ax = fig.add_subplot(111,projection='3d')
+def mk_plot():
+    global fig, jj
+    ax = fig.add_subplot(330 + jj,projection='3d')
+    jj += 1
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
 
-xs = [0]
-ys = [0]
-zs = [0]
+    ax.set_xlim([-2,2])
+    ax.set_ylim([2,-2])
+    ax.set_zlim([2,-2])
 
-ax.scatter(xs,ys,zs, c='r', marker='o')
+    grounded = np.linspace([0,0,0],[5,0,0],50).T
+    xx,yy,zz = grounded
+    ax.plot(xx,yy,zz,c='black')
+
+    return fig, ax
+
+#fig,ax = mk_plot()
+#
+#xs = [0]
+#ys = [0]
+#zs = [0]
+#
+#ax.scatter(xs,ys,zs, c='r', marker='o')
 
 #cam1 = Webcam(-2,-2,0,0,deg2rad(30),deg2rad(-45))
-cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(0),deg2rad(0))
+#cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(0),deg2rad(0))
 #cam2 = Webcam(2,-2,0,0,deg2rad(30),deg2rad(-135))
 #cam3 = Webcam(2,2,0,0,deg2rad(30),deg2rad(135))
-cam1.plot(ax)
+#cam1.plot(ax)
 #cam2.plot(ax)
 #cam3.plot(ax)
 
-grounded = np.linspace([0,0,0],[5,0,0],50).T
-xx,yy,zz = grounded
-ax.plot(xx,yy,zz,c='black')
 
-ax.set_xlabel('X Label')
-ax.set_ylabel('Y Label')
-ax.set_zlabel('Z Label')
 
-ax.set_xlim([-2,2])
-ax.set_ylim([2,-2])
-ax.set_zlim([2,-2])
+#plt.show()
+
+curr = 0
+for curr in range(0,361,45):
+    fig,ax = mk_plot()
+    cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(45),deg2rad(curr))
+    cam1.plot(ax)
+    ax.set_title(str(curr))
 
 plt.show()
