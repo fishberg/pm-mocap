@@ -36,7 +36,8 @@ def rot_mat(roll, pitch, yaw):
     """
 
     #A = np.matmul(np.matmul(B,C),D)
-    A = np.matmul(np.matmul(D,C),B)
+    # inverted so it resolves yaw first, then pitch, then roll
+    A = np.matmul(np.matmul(D,C),B) 
     return A
 
 def deg2rad(deg):
@@ -81,42 +82,13 @@ class Camera:
                          line_bl[:,20],
                          line_tl[:,20]]).T
 
-        print(rec)
-        print(rec.shape)
-        print('-----')
-        print(line_top[:,20])
-        print(line_bot[:,20])
-        print(line_lft[:,20])
-        print(line_rgt[:,20])
-        print(line_top.shape)
-        print('-----')
 
-        w = np.abs(line_top[2,1:]*2)
-        h = np.abs(line_lft[1,1:]*2)
-        print('=====')
-        print(line_top.shape)
-        print(line_lft.shape)
-        print(w)
-        print(h)
-        print(w/h)
-        print('=====')
-
-        """
         line_center = (line_center.T + loc).T
-        line_wsub = (line_wsub.T + loc).T
-        line_wadd = (line_wadd.T + loc).T
-        line_hsub = (line_hsub.T + loc).T
-        line_hadd = (line_hadd.T + loc).T
-        """
-        """
-        assert all(line_hsub[0,:] == line_hadd[0,:])
-        assert all(line_hsub[1,:] == line_hadd[1,:])
-        assert all(-line_hsub[2,:] == line_hadd[2,:])
-
-        assert all(line_wsub[0,:] == line_wadd[0,:])
-        assert all(-line_wsub[1,:] == line_wadd[1,:])
-        assert all(line_wsub[2,:] == line_wadd[2,:])
-        """
+        line_tl = (line_tl.T + loc).T
+        line_tr = (line_tr.T + loc).T
+        line_bl = (line_bl.T + loc).T
+        line_br = (line_br.T + loc).T
+        rec = (rec.T + loc).T
 
         return line_center, line_tl, line_tr, line_bl, line_br, rec
         #, line_top, line_bot, line_lft, line_rgt
@@ -177,7 +149,7 @@ def mk_plot():
 curr = 0
 for curr in range(0,361,45):
     fig,ax = mk_plot()
-    cam1 = Webcam(0,0,0,deg2rad(0),deg2rad(0),deg2rad(curr))
+    cam1 = Webcam(-2,-2,0,deg2rad(0),deg2rad(0),deg2rad(curr))
     cam1.plot(ax)
     ax.set_title(str(curr))
 
