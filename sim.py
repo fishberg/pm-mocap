@@ -60,8 +60,14 @@ class Camera:
         rot = rot_mat(self.roll, self.pitch, self.yaw)
 
         line_step = np.linspace([0,0,0],[5,0,0],101).T
-        print(line_step.shape)
+
         line_center = np.matmul(rot, line_step)
+
+        line_top = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, 0), line_step))
+        line_bot = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, 0), line_step))
+        line_lft = np.matmul(rot, np.matmul(rot_mat(0, 0,-self.wfov/2), line_step))
+        line_rgt = np.matmul(rot, np.matmul(rot_mat(0, 0, self.wfov/2), line_step))
+
         line_tl = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step))
         line_tr = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step))
         line_bl = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step))
@@ -69,11 +75,31 @@ class Camera:
 
         loc = np.array([self.x, self.y, self.z])
 
-        rec = np.array([line_tl[:,20], line_tr[:,20], line_br[:,20], line_bl[:,20], line_tl[:,20]]).T
+        rec = np.array([ line_tl[:,20],
+                         line_tr[:,20],
+                         line_br[:,20],
+                         line_bl[:,20],
+                         line_tl[:,20]]).T
+
         print(rec)
         print(rec.shape)
-        print(line_tl)
-        print(line_tl.shape)
+        print('-----')
+        print(line_top[:,20])
+        print(line_bot[:,20])
+        print(line_lft[:,20])
+        print(line_rgt[:,20])
+        print(line_top.shape)
+        print('-----')
+
+        w = np.abs(line_top[2,1:]*2)
+        h = np.abs(line_lft[1,1:]*2)
+        print('=====')
+        print(line_top.shape)
+        print(line_lft.shape)
+        print(w)
+        print(h)
+        print(w/h)
+        print('=====')
 
         """
         line_center = (line_center.T + loc).T
@@ -93,10 +119,11 @@ class Camera:
         """
 
         return line_center, line_tl, line_tr, line_bl, line_br, rec
+        #, line_top, line_bot, line_lft, line_rgt
     
     def plot(self, ax):
         i = 0
-        colors = ['green','red','orange','blue','purple','black']
+        colors = ['green','red','orange','blue','purple','black','gray','gray','gray','gray']
         for line in self.mk_fov():
             xx,yy,zz = line
             ax.plot(xx,yy,zz,c=colors[i])
@@ -105,7 +132,7 @@ class Camera:
 
 class Webcam(Camera):
     def __init__(self,x,y,z,roll,pitch,yaw):
-        super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(60*9/16))
+        super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(44.048625674))
 
 jj = 1
 fig = plt.figure()
