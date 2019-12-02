@@ -38,7 +38,7 @@ def rot_mat(roll, pitch, yaw):
 
     #A = np.matmul(np.matmul(B,C),D)
     # inverted so it resolves yaw first, then pitch, then roll
-    A = np.matmul(np.matmul(D,C),B) 
+    A = D @ C @ B
     return A
 
 def deg2rad(deg):
@@ -65,7 +65,7 @@ class Camera:
 
         line_step = np.linspace([0,0,0],[5,0,0],101).T
 
-        line_center = np.matmul(rot, line_step)
+        line_center = rot @ line_step
 
         """
         line_top = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, 0), line_step))
@@ -74,10 +74,10 @@ class Camera:
         line_rgt = np.matmul(rot, np.matmul(rot_mat(0, 0, self.wfov/2), line_step))
         """
 
-        line_tl = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step))
-        line_tr = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step))
-        line_bl = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step))
-        line_br = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, self.wfov/2), line_step))
+        line_tl = rot @ rot_mat(0, self.hfov/2,-self.wfov/2) @ line_step
+        line_tr = rot @ rot_mat(0, self.hfov/2, self.wfov/2) @ line_step
+        line_bl = rot @ rot_mat(0,-self.hfov/2,-self.wfov/2) @ line_step
+        line_br = rot @ rot_mat(0,-self.hfov/2, self.wfov/2) @ line_step
 
         loc = np.array([self.x, self.y, self.z])
 
@@ -113,32 +113,32 @@ class Camera:
         rot = rot_mat(self.roll, self.pitch, self.yaw)
         line_step = np.array([1,0,0]).T
 
-        line_center = np.matmul(rot, line_step)
+        line_center = rot @ line_step
 
-        line_tl = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step))
-        line_tr = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step))
-        line_bl = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step))
-        line_br = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, self.wfov/2), line_step))
+        line_tl = rot @ rot_mat(0, self.hfov/2,-self.wfov/2) @ line_step
+        line_tr = rot @ rot_mat(0, self.hfov/2, self.wfov/2) @ line_step
+        line_bl = rot @ rot_mat(0,-self.hfov/2,-self.wfov/2) @ line_step
+        line_br = rot @ rot_mat(0,-self.hfov/2, self.wfov/2) @ line_step
 
         v1 = line_tr - line_tl 
         v2 = line_bl - line_tl
 
         A = np.array([v1,v2]).T
 
-        P = np.matmul(np.matmul(A, np.linalg.inv(np.matmul(A.T,A))), A.T)
+        P = A @ np.linalg.inv(A.T @ A) @ A.T
 
-        proj = np.matmul(P,point)
+        proj = P @ point
         dist = np.linalg.norm(point - proj)
 
         rotInv = rot_mat(-self.roll, -self.pitch, -self.yaw)
-        img = np.matmul(rotInv, proj)
+        img = rotInv @ proj
         flat = img[1:]
 
         # create unit corners
-        corner_tl = np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step)
-        corner_tr = np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step)
-        corner_bl = np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step)
-        corner_br = np.matmul(rot_mat(0,-self.hfov/2, self.wfov/2), line_step)
+        corner_tl = rot_mat(0, self.hfov/2,-self.wfov/2) @ line_step
+        corner_tr = rot_mat(0, self.hfov/2, self.wfov/2) @ line_step
+        corner_bl = rot_mat(0,-self.hfov/2,-self.wfov/2) @ line_step
+        corner_br = rot_mat(0,-self.hfov/2, self.wfov/2) @ line_step
 
         # adjust to the right distance
         corner_tl /= corner_tl[0]
