@@ -107,7 +107,7 @@ class Camera:
             i+=1
             #break
 
-    def sees(self,x,y,z):
+    def visable(self,x,y,z):
         point = np.array([x,y,z]).T
 
         rot = rot_mat(self.roll, self.pitch, self.yaw)
@@ -153,19 +153,19 @@ class Camera:
         corner_br = corner_br[1:]
 
         in_front = np.dot(point,line_center) >= 0
-        seeable = in_front and \
+        visable = in_front and \
                   corner_tl[0] <= flat[0] <= corner_tr[0] and \
                   corner_tl[1] <= flat[1] <= corner_bl[1]
         pixel = None
 
-        if seeable:
+        if visable:
             xi = flat[0] - corner_tl[0]
             yi = flat[1] - corner_tl[1]
             xstep = (corner_tr[0] - corner_tl[0]) / self.wpix
             ystep = (corner_bl[1] - corner_tl[1]) / self.hpix
             pixel = (xi / xstep, yi / ystep)
 
-        return seeable, pixel
+        return visable, pixel
 
         
     """
@@ -250,9 +250,9 @@ tracks = [(1,0,0),(1,.1,0), (-1,0,0)]
 for track in tracks:
     xx,yy,zz = track
     ax.scatter(xx,yy,zz,c='brown')
-    seeable, loc = cam1.sees(*track)
-    if seeable:
-        xx,yy = loc
+    visable, pixel = cam1.visable(*track)
+    if visable:
+        xx,yy = pixel
         ax2.scatter(xx,yy, c='brown')
 
 """
