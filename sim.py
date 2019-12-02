@@ -22,22 +22,7 @@ def rot_mat(roll, pitch, yaw):
     B = np.array([[             1,              0,              0],
                   [             0,   np.cos(roll),   np.sin(roll)],
                   [             0,  -np.sin(roll),   np.cos(roll)]])
-    """
-    D = np.array([[ np.cos(pitch),  np.sin(pitch),              0],
-                  [-np.sin(pitch),  np.cos(pitch),              0],
-                  [             0,              0,              1]])
 
-    C = np.array([[             1,              0,              0],
-                  [             0,   np.cos(roll),   np.sin(roll)],
-                  [             0,  -np.sin(roll),   np.cos(roll)]])
-
-    B = np.array([[   np.cos(yaw),    np.sin(yaw),              0],
-                  [  -np.sin(yaw),    np.cos(yaw),              0],
-                  [             0,              0,              1]])
-    """
-
-    #A = np.matmul(np.matmul(B,C),D)
-    # inverted so it resolves yaw first, then pitch, then roll
     A = D @ C @ B
     return A
 
@@ -67,13 +52,6 @@ class Camera:
 
         line_center = rot @ line_step
 
-        """
-        line_top = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, 0), line_step))
-        line_bot = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, 0), line_step))
-        line_lft = np.matmul(rot, np.matmul(rot_mat(0, 0,-self.wfov/2), line_step))
-        line_rgt = np.matmul(rot, np.matmul(rot_mat(0, 0, self.wfov/2), line_step))
-        """
-
         line_tl = rot @ rot_mat(0, self.hfov/2,-self.wfov/2) @ line_step
         line_tr = rot @ rot_mat(0, self.hfov/2, self.wfov/2) @ line_step
         line_bl = rot @ rot_mat(0,-self.hfov/2,-self.wfov/2) @ line_step
@@ -96,7 +74,6 @@ class Camera:
         rec = (rec.T + loc).T
 
         return line_center, line_tl, line_tr, line_bl, line_br, rec
-        #, line_top, line_bot, line_lft, line_rgt
     
     def plot(self, ax):
         i = 0
@@ -167,20 +144,6 @@ class Camera:
 
         return visable, pixel
 
-        
-    """
-    def sees(self,x,y,z):
-        dx = x - self.x
-        dy = y - self.y
-        dz = z - self.z
-
-        yaw = np.atan2(dy,dx)
-        pitch = np.atan2(dz,dx)
-
-        return self.pitch - self.hfov/2 < pitch < self.pitch + self.hfov/2 and
-               self.yaw - self.wfov/2 < yaw < self.yaw + self.wfov/2
-    """
-
 class Webcam(Camera):
     def __init__(self,x,y,z,roll,pitch,yaw):
         super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(44.048625674),1280,960)
@@ -223,24 +186,6 @@ def mk_plot2D():
 
     return fig, ax
 
-#fig,ax = mk_plot()
-#
-#xs = [0]
-#ys = [0]
-#zs = [0]
-#
-#ax.scatter(xs,ys,zs, c='r', marker='o')
-
-#cam1 = Webcam(-2,-2,0,0,deg2rad(30),deg2rad(-45))
-#cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(0),deg2rad(0))
-#cam2 = Webcam(2,-2,0,0,deg2rad(30),deg2rad(-135))
-#cam3 = Webcam(2,2,0,0,deg2rad(30),deg2rad(135))
-#cam1.plot(ax)
-#cam2.plot(ax)
-#cam3.plot(ax)
-
-#plt.show()
-
 fig,ax = mk_plot3D()
 cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(10),deg2rad(0))
 cam1.plot(ax)
@@ -254,14 +199,5 @@ for track in tracks:
     if visable:
         xx,yy = pixel
         ax2.scatter(xx,yy, c='brown')
-
-"""
-curr = 0
-for curr in range(0,361,45):
-    fig,ax = mk_plot()
-    cam1 = Webcam(0,0,0,deg2rad(0),deg2rad(0),deg2rad(curr))
-    cam1.plot(ax)
-    ax.set_title(str(curr))
-"""
 
 plt.show()
