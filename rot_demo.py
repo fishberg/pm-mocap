@@ -3,7 +3,6 @@
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy
 
 import time
 
@@ -48,7 +47,7 @@ def rad2deg(rad):
     return 180/np.pi * rad
 
 class Camera:
-    def __init__(self,x,y,z,roll,pitch,yaw,wfov,hfov,wpix,hpix):
+    def __init__(self,x,y,z,roll,pitch,yaw,wfov,hfov):
         self.x = x
         self.y = y
         self.z = z
@@ -57,8 +56,6 @@ class Camera:
         self.yaw = yaw
         self.wfov = wfov
         self.hfov = hfov
-        self.wpix = wpix
-        self.hpix = hpix
 
     def mk_fov(self):
         rot = rot_mat(self.roll, self.pitch, self.yaw)
@@ -67,12 +64,10 @@ class Camera:
 
         line_center = np.matmul(rot, line_step)
 
-        """
         line_top = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, 0), line_step))
         line_bot = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, 0), line_step))
         line_lft = np.matmul(rot, np.matmul(rot_mat(0, 0,-self.wfov/2), line_step))
         line_rgt = np.matmul(rot, np.matmul(rot_mat(0, 0, self.wfov/2), line_step))
-        """
 
         line_tl = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step))
         line_tr = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step))
@@ -107,93 +102,15 @@ class Camera:
             i+=1
             #break
 
-    def sees(self,x,y,z):
-        point = np.array([x,y,z]).T
-
-        rot = rot_mat(self.roll, self.pitch, self.yaw)
-        line_step = np.array([1,0,0]).T
-
-        line_center = np.matmul(rot, line_step)
-
-        line_tl = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step))
-        line_tr = np.matmul(rot, np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step))
-        line_bl = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step))
-        line_br = np.matmul(rot, np.matmul(rot_mat(0,-self.hfov/2, self.wfov/2), line_step))
-
-        v1 = line_tr - line_tl 
-        v2 = line_bl - line_tl
-
-        A = np.array([v1,v2]).T
-
-        P = np.matmul(np.matmul(A, np.linalg.inv(np.matmul(A.T,A))), A.T)
-
-        proj = np.matmul(P,point)
-        dist = np.linalg.norm(point - proj)
-
-        rotInv = rot_mat(-self.roll, -self.pitch, -self.yaw)
-        img = np.matmul(rotInv, proj)
-        flat = img[1:]
-
-        # create unit corners
-        corner_tl = np.matmul(rot_mat(0, self.hfov/2,-self.wfov/2), line_step)
-        corner_tr = np.matmul(rot_mat(0, self.hfov/2, self.wfov/2), line_step)
-        corner_bl = np.matmul(rot_mat(0,-self.hfov/2,-self.wfov/2), line_step)
-        corner_br = np.matmul(rot_mat(0,-self.hfov/2, self.wfov/2), line_step)
-
-        # adjust to the right distance
-        corner_tl /= corner_tl[0]
-        corner_tr /= corner_tr[0]
-        corner_bl /= corner_bl[0]
-        corner_br /= corner_br[0]
-
-        # remove flattened dimension
-        corner_tl = corner_tl[1:]
-        corner_tr = corner_tr[1:]
-        corner_bl = corner_bl[1:]
-        corner_br = corner_br[1:]
-
-        seeable = corner_tl[0] <= flat[0] <= corner_tr[0] and \
-                  corner_tl[1] <= flat[1] <= corner_bl[1]
-        pixel = None
-
-        if seeable:
-            xi = flat[0] - corner_tl[0]
-            yi = flat[1] - corner_tl[1]
-            xstep = (corner_tr[0] - corner_tl[0]) / self.wpix
-            ystep = (corner_bl[1] - corner_tl[1]) / self.hpix
-            pixel = (xi / xstep, yi / ystep)
-
-        return seeable, pixel
-
-        
-    """
-    def sees(self,x,y,z):
-        dx = x - self.x
-        dy = y - self.y
-        dz = z - self.z
-
-        yaw = np.atan2(dy,dx)
-        pitch = np.atan2(dz,dx)
-
-        return self.pitch - self.hfov/2 < pitch < self.pitch + self.hfov/2 and
-               self.yaw - self.wfov/2 < yaw < self.yaw + self.wfov/2
-    """
-
 class Webcam(Camera):
     def __init__(self,x,y,z,roll,pitch,yaw):
-        super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(44.048625674),1280,960)
-
-class Track:
-    def __init__(x,y,z):
-        self.x = x
-        self.y = y
-        self.z = z
+        super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(44.048625674))
 
 jj = 1
 fig = plt.figure()
-def mk_plot3D():
+def mk_plot():
     global fig, jj
-    ax = fig.add_subplot(120 + jj,projection='3d')
+    ax = fig.add_subplot(330 + jj,projection='3d')
     jj += 1
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
@@ -206,18 +123,6 @@ def mk_plot3D():
     grounded = np.linspace([0,0,0],[5,0,0],50).T
     xx,yy,zz = grounded
     ax.plot(xx,yy,zz,c='black')
-
-    return fig, ax
-
-def mk_plot2D():
-    global fig, jj
-    ax = fig.add_subplot(120 + jj)
-    jj += 1
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-
-    ax.set_xlim([0,1280])
-    ax.set_ylim([960,0])
 
     return fig, ax
 
@@ -239,27 +144,11 @@ def mk_plot2D():
 
 #plt.show()
 
-fig,ax = mk_plot3D()
-cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(10),deg2rad(0))
-cam1.plot(ax)
-fig,ax2 = mk_plot2D()
-
-tracks = [(1,0,0),(1,.1,0)]
-for track in tracks:
-    xx,yy,zz = track
-    ax.scatter(xx,yy,zz,c='brown')
-    seeable, loc = cam1.sees(*track)
-    if seeable:
-        xx,yy = loc
-        ax2.scatter(xx,yy, c='brown')
-
-"""
 curr = 0
 for curr in range(0,361,45):
     fig,ax = mk_plot()
-    cam1 = Webcam(0,0,0,deg2rad(0),deg2rad(0),deg2rad(curr))
+    cam1 = Webcam(-2,-2,0,deg2rad(0),deg2rad(0),deg2rad(curr))
     cam1.plot(ax)
     ax.set_title(str(curr))
-"""
 
 plt.show()
