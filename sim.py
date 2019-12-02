@@ -144,6 +144,37 @@ class Camera:
 
         return visable, pixel
 
+    def ray(self,x,y):
+        rot = rot_mat(self.roll, self.pitch, self.yaw)
+        line_step = np.array([1,0,0]).T
+
+        # create unit corners
+        corner_tl = rot_mat(0, self.hfov/2,-self.wfov/2) @ line_step
+        corner_tr = rot_mat(0, self.hfov/2, self.wfov/2) @ line_step
+        corner_bl = rot_mat(0,-self.hfov/2,-self.wfov/2) @ line_step
+        corner_br = rot_mat(0,-self.hfov/2, self.wfov/2) @ line_step
+
+        # adjust to the right distance
+        corner_tl /= corner_tl[0]
+        corner_tr /= corner_tr[0]
+        corner_bl /= corner_bl[0]
+        corner_br /= corner_br[0]
+
+        # remove flattened dimension
+        corner_tl = corner_tl[1:]
+        corner_tr = corner_tr[1:]
+        corner_bl = corner_bl[1:]
+        corner_br = corner_br[1:]
+
+        xstep = (corner_tr[0] - corner_tl[0]) / self.wpix
+        ystep = (corner_bl[1] - corner_tl[1]) / self.hpix
+        p = (x * xstep + corner_tl[0], y * ystep + corner_tl[1])
+
+        relpoint = np.array([np.sqrt(1-p[0]**2-p[1]**2), p[0], p[1]])
+        point = rot @ relpoint
+
+        return np.linspace([0,0,0],5*point,101).T
+
 class Webcam(Camera):
     def __init__(self,x,y,z,roll,pitch,yaw):
         super(Webcam,self).__init__(x,y,z,roll,pitch,yaw,deg2rad(60),deg2rad(44.048625674),1280,960)
@@ -187,7 +218,7 @@ def mk_plot2D():
     return fig, ax
 
 fig,ax = mk_plot3D()
-cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(10),deg2rad(0))
+cam1 = Webcam(0,0,0,deg2rad(0),deg2rad(45),deg2rad(90))
 cam1.plot(ax)
 fig,ax2 = mk_plot2D()
 
@@ -199,5 +230,13 @@ for track in tracks:
     if visable:
         xx,yy = pixel
         ax2.scatter(xx,yy, c='brown')
+
+pixels = [(1280//2,960//4)]
+for pixel in pixels:
+    line = cam1.ray(*pixel)
+    xx,yy,zz = line
+    ax.plot(xx,yy,zz,c='cyan')
+    ax2.scatter(pixel[0],pixel[1],c='cyan')
+
 
 plt.show()
