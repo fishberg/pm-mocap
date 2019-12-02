@@ -152,7 +152,9 @@ class Camera:
         corner_bl = corner_bl[1:]
         corner_br = corner_br[1:]
 
-        seeable = corner_tl[0] <= flat[0] <= corner_tr[0] and \
+        in_front = np.dot(point,line_center) >= 0
+        seeable = in_front and \
+                  corner_tl[0] <= flat[0] <= corner_tr[0] and \
                   corner_tl[1] <= flat[1] <= corner_bl[1]
         pixel = None
 
@@ -244,7 +246,7 @@ cam1 = Webcam(0,0,0,deg2rad(90),deg2rad(10),deg2rad(0))
 cam1.plot(ax)
 fig,ax2 = mk_plot2D()
 
-tracks = [(1,0,0),(1,.1,0)]
+tracks = [(1,0,0),(1,.1,0), (-1,0,0)]
 for track in tracks:
     xx,yy,zz = track
     ax.scatter(xx,yy,zz,c='brown')
